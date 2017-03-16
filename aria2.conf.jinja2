@@ -1,0 +1,19 @@
+continue=true
+daemon=false
+dir={{ pwd }}/downloads
+file-allocation=falloc
+log-level=info
+max-connection-per-server=4
+max-concurrent-downloads=3
+max-overall-download-limit=0
+min-split-size=5M
+enable-http-pipelining=true
+
+input-file={{ pwd }}/aria2.session
+save-session={{ pwd }}/aria2.session
+
+enable-rpc=true
+rpc-listen-all=true
+rpc-secret={{ token }}
+rpc-allow-origin-all=true
+

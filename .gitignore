@@ -1,3 +1,10 @@
+aria2.session
+aria2.conf
+.token
+downloads
+
+*.pyc
+
 .rbenv-*
 TAGS
 tags
