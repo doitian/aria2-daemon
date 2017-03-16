@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import logging
 import xmlrpc.client
+import base64
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -33,6 +34,10 @@ class Aria2RPCClient():
     def add_urls(self, *urls):
         return self.client.aria2.addUri(*self.pack(urls))
 
+    def add_torrent(self, torrent_file):
+        torrent = base64.b64encode(torrent_file.read_bytes()).decode()
+        return self.client.aria2.addTorrent(*self.pack(torrent))
+
 
 class Aria2RPCEventHandler(FileSystemEventHandler):
     def __init__(self, client):
@@ -43,29 +48,31 @@ class Aria2RPCEventHandler(FileSystemEventHandler):
             return
 
         src = Path(event.src_path)
-        if src.suffixes[-2:] != ['.urls', '.txt']:
-            return
+        if src.suffixes[-2:] == ['.urls', '.txt']:
+            self.download_urls(src)
+        if src.suffix == '.torrent':
+            self.add_torrent(src)
 
+    def download_urls(self, src):
         try:
             urls = src.read_text().splitlines()
         except Exception as e:
-            logging.error("%s parse url: %s", event.src_path, e)
+            logging.error("%s parse url: %s", src, e)
             return
 
-        has_error = False
         for url in urls:
             try:
                 guid = self.client.add_urls(url)
                 logging.info("Add job %s: %s", guid, url)
             except Exception as e:
-                has_error = True
-                logging.error("%s parse url: %s", event.src_path, e)
+                logging.error("%s parse url: %s", src, e)
 
-        if not has_error:
-            try:
-                src.unlink()
-            except:
-                pass
+    def add_torrent(self, src):
+        try:
+            guid = self.client.add_torrent(src)
+            logging.info("Add torrent %s: %s", guid, src)
+        except Exception as e:
+            logging.error("%s add torrent: %s", src, e)
 
 
 logging.basicConfig(
